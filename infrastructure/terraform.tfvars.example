@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is gitignored — safe to put real values here
+
+aws_region              = "us-east-1"
+gcp_project_id          = "your-gcp-project-id-here"
+gcp_region              = "us-central1"
+gcp_tagger_function_url = "https://us-central1-YOUR_PROJECT.cloudfunctions.net/aussie-ecolens-tagger"
