@@ -44,6 +44,8 @@ def lambda_handler(event, context):
 
     urls      = body.get("urls", [])
     new_tags  = body.get("tags", [])
+    if isinstance(new_tags, str):
+        new_tags = [new_tags]
     operation = body.get("operation", 1)  # 1=add, 0=remove
 
     if not urls or not new_tags:
@@ -61,16 +63,37 @@ def lambda_handler(event, context):
             continue
 
         file_id       = item["file_id"]
-        current_tags  = list(item.get("tags", []))
+        current_tags = item.get("tags", {})
 
-        if operation == 1:
-            # ADD: merge new tags (avoid duplicates)
-            merged   = list(set(current_tags + new_tags))
-            added    = [t for t in new_tags if t not in current_tags]
+        # Convert old list-style tags into dictionary format
+        if isinstance(current_tags, list):
+            tag_counts = {}
+            for tag in current_tags:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
         else:
-            # REMOVE: only remove tags that exist; ignore tags not in the list
-            merged   = [t for t in current_tags if t not in new_tags]
-            added    = []
+            tag_counts = {
+                tag: int(count)
+                for tag, count in current_tags.items()
+            }
+        
+        if operation == 1:
+            added = []
+        
+            for tag in new_tags:
+                if tag not in tag_counts:
+                    added.append(tag)
+        
+                # Manual add increases the tag count by 1
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        
+        else:
+            added = []
+        
+            for tag in new_tags:
+                if tag in tag_counts:
+                    del tag_counts[tag]
+        
+        merged = tag_counts
 
         table.update_item(
             Key={"file_id": file_id},
