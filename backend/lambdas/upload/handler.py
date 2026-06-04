@@ -106,7 +106,7 @@ def handle_confirm(event):
         "file_key":     file_key,
         "filename":     filename,
         "file_url":     file_url,
-        "thumbnail_url": "",
+        "thumbnail_url": "pending",
         "checksum":     checksum,
         "content_type": content_type,
         "file_type":    file_type,
