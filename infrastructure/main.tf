@@ -55,20 +55,7 @@ resource "aws_s3_bucket_public_access_block" "media" {
   restrict_public_buckets = false
 }
 
-resource "aws_s3_bucket_policy" "media_public_read" {
-  bucket     = aws_s3_bucket.media.id
-  depends_on = [aws_s3_bucket_public_access_block.media]
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "PublicRead"
-      Effect    = "Allow"
-      Principal = "*"
-      Action    = "s3:GetObject"
-      Resource  = "${aws_s3_bucket.media.arn}/*"
-    }]
-  })
-}
+
 
 # ─────────────────────────────────────────────
 # COGNITO USER POOL
@@ -177,53 +164,9 @@ resource "aws_dynamodb_table" "files" {
 # ─────────────────────────────────────────────
 # IAM ROLE — Lambda execution
 # ─────────────────────────────────────────────
-resource "aws_iam_role" "lambda_exec" {
-  name = "aussie-ecolens-lambda-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "sts:AssumeRole"
-      Effect    = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
-    }]
-  })
-}
 
-resource "aws_iam_role_policy" "lambda_policy" {
-  name = "aussie-ecolens-lambda-policy"
-  role = aws_iam_role.lambda_exec.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = "arn:aws:logs:*:*:*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:HeadObject", "s3:ListBucket"]
-        Resource = ["${aws_s3_bucket.media.arn}", "${aws_s3_bucket.media.arn}/*"]
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem",
-                    "dynamodb:Query", "dynamodb:Scan", "dynamodb:UpdateItem"]
-        Resource = ["${aws_dynamodb_table.files.arn}", "${aws_dynamodb_table.files.arn}/index/*"]
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["sns:Publish", "sns:Subscribe", "sns:ListSubscriptionsByTopic"]
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["cognito-idp:AdminGetUser"]
-        Resource = aws_cognito_user_pool.main.arn
-      }
-    ]
-  })
-}
+
+
 
 # ─────────────────────────────────────────────
 # SNS TOPIC — tag notifications
@@ -244,7 +187,7 @@ resource "aws_lambda_function" "auth" {
   filename         = data.archive_file.auth_zip.output_path
   source_code_hash = data.archive_file.auth_zip.output_base64sha256
   function_name    = "aussie-ecolens-auth"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
@@ -268,7 +211,7 @@ resource "aws_lambda_function" "upload" {
   filename         = data.archive_file.upload_zip.output_path
   source_code_hash = data.archive_file.upload_zip.output_base64sha256
   function_name    = "aussie-ecolens-upload"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
@@ -292,7 +235,7 @@ resource "aws_lambda_function" "thumbnail" {
   filename         = data.archive_file.thumbnail_zip.output_path
   source_code_hash = data.archive_file.thumbnail_zip.output_base64sha256
   function_name    = "aussie-ecolens-thumbnail"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 120
@@ -320,7 +263,7 @@ resource "aws_lambda_function" "tagger" {
   filename         = data.archive_file.tagger_zip.output_path
   source_code_hash = data.archive_file.tagger_zip.output_base64sha256
   function_name    = "aussie-ecolens-tagger"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 300
@@ -347,7 +290,7 @@ resource "aws_lambda_function" "queries" {
   filename         = data.archive_file.queries_zip.output_path
   source_code_hash = data.archive_file.queries_zip.output_base64sha256
   function_name    = "aussie-ecolens-queries"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
@@ -372,7 +315,7 @@ resource "aws_lambda_function" "tags" {
   filename         = data.archive_file.tags_zip.output_path
   source_code_hash = data.archive_file.tags_zip.output_base64sha256
   function_name    = "aussie-ecolens-tags"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
@@ -396,7 +339,7 @@ resource "aws_lambda_function" "delete" {
   filename         = data.archive_file.delete_zip.output_path
   source_code_hash = data.archive_file.delete_zip.output_base64sha256
   function_name    = "aussie-ecolens-delete"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
@@ -420,7 +363,7 @@ resource "aws_lambda_function" "notifications" {
   filename         = data.archive_file.notifications_zip.output_path
   source_code_hash = data.archive_file.notifications_zip.output_base64sha256
   function_name    = "aussie-ecolens-notifications"
-  role             = aws_iam_role.lambda_exec.arn
+  role             = "arn:aws:iam::371320130392:role/LabRole"
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
@@ -451,13 +394,6 @@ resource "aws_s3_bucket_notification" "media_trigger" {
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.thumbnail.arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "uploads/"
-    filter_suffix       = ""
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.tagger.arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "uploads/"
     filter_suffix       = ""
@@ -767,7 +703,7 @@ resource "aws_api_gateway_stage" "prod" {
 
 # ── Lambda permissions for REST API Gateway ──────────────────────────────────
 locals {
-  apigw_exec = "arn:aws:execute-api:${var.aws_region}:*:${aws_api_gateway_rest_api.main.id}/*/*"
+  apigw_exec = "arn:aws:execute-api:${var.aws_region}:371320130392:${aws_api_gateway_rest_api.main.id}/*/*"
 }
 
 resource "aws_lambda_permission" "apigw_upload" {
