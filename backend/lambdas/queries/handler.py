@@ -52,7 +52,10 @@ def handle_query_tags(body: dict) -> dict:
     """
     tag_query   = body.get("tags", {})      # {"species": count, ...}
     species_query = body.get("species", []) # ["dingo", ...]
-
+  
+    if isinstance(species_query, str):
+        species_query = [species_query]
+  
     # Normalise both query formats into: {species: min_count}
     required: dict[str, int] = {}
     if tag_query:
@@ -68,12 +71,17 @@ def handle_query_tags(body: dict) -> dict:
     for item in all_items:
         if item.get("status") != "ready":
             continue
-        item_tags: list = item.get("tags", [])
+        item_tags = item.get("tags", [])
 
-        # Count occurrences per tag in this file
-        tag_counts: dict[str, int] = {}
-        for t in item_tags:
-            tag_counts[t] = tag_counts.get(t, 0) + 1
+        if isinstance(item_tags, dict):
+            tag_counts = {
+                k: int(v)
+                for k, v in item_tags.items()
+            }
+        else:
+            tag_counts = {}
+            for t in item_tags:
+                tag_counts[t] = tag_counts.get(t, 0) + 1
 
         # AND logic: every required species must appear with >= min count
         match = all(
@@ -216,6 +224,8 @@ def lambda_handler(event, context):
     body = json.loads(event.get("body") or "{}")
 
     if "/query/tags" in path:
+        return handle_query_tags(body)
+    elif "/query/species" in path:
         return handle_query_tags(body)
     elif "/query/thumbnail" in path:
         return handle_query_thumbnail(body)
