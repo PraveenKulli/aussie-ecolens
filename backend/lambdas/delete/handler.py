@@ -50,6 +50,8 @@ def find_item_by_url(file_url: str) -> dict | None:
 def lambda_handler(event, context):
     body = json.loads(event.get("body") or "{}")
     urls = body.get("urls", [])
+    if isinstance(urls, str):
+        urls = [urls]
 
     if not urls:
         return _response(400, {"error": "urls list is required"})
