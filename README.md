@@ -231,7 +231,7 @@ See `labels.txt` for the full list.
 
 | Name | Student ID | Contribution | % |
 |------|-----------|--------------|---|
-| Praveen Kulli | [YOUR_ID] | Full-stack: Infrastructure, all Lambda functions, GCP Cloud Function, React frontend, deployment scripts, reports | 100% |
+| Praveen Kulli | [YOUR_ID] | Full-stack: Infrastructure, all Lambda functions, GCP Cloud Function, React frontend, deployment scripts, reports | % |
 
 ---
 
