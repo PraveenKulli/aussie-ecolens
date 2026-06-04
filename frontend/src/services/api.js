@@ -62,7 +62,7 @@ export async function queryByThumbnail(thumbnailUrl) {
 export async function queryByFile(file) {
   const headers = await authHeaders();
   const buffer  = await file.arrayBuffer();
-  const base64  = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const base64  = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
   const { data } = await axios.post(`${API_BASE}/query/file`, {
     file_base64:  base64,
     content_type: file.type,
