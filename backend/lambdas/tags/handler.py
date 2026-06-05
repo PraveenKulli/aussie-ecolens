@@ -32,8 +32,10 @@ def _response(status, body):
 
 def find_item_by_url(file_url: str) -> dict | None:
     """Find a DynamoDB item by its file_url (scan with filter)."""
+    # Strip presigned URL params — DynamoDB stores plain URLs
+    plain_url = file_url.split("?")[0]
     resp = table.scan(
-        FilterExpression=Attr("file_url").eq(file_url)
+        FilterExpression=Attr("file_url").eq(plain_url)
     )
     items = resp.get("Items", [])
     return items[0] if items else None

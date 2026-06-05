@@ -39,8 +39,19 @@ def call_gcp_tagger(s3_key: str, file_url: str, file_type: str) -> list:
         print("[tagger] No GCP_FUNCTION_URL configured, using fallback local inference")
         return run_local_inference(s3_key, file_type)
 
+    # Generate presigned URL so GCP can download from private S3 bucket
+    try:
+        presigned_url = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": BUCKET, "Key": s3_key},
+            ExpiresIn=300,
+        )
+    except Exception as e:
+        print(f"[tagger] Failed to generate presigned URL: {e}")
+        presigned_url = file_url
+
     payload = json.dumps({
-        "file_url":  file_url,
+        "file_url":  presigned_url,
         "file_type": file_type,
         "s3_key":    s3_key,
         "s3_bucket": BUCKET,
@@ -186,13 +197,18 @@ def publish_notifications(tags: list, file_url: str):
 
 
 def lambda_handler(event, context):
-    for record in event.get("Records", []):
-        s3_key  = record["s3"]["object"]["key"]
-        ext     = os.path.splitext(s3_key)[1].lower()
-        file_id = _s3_key_to_file_id(s3_key)
-        file_url = f"https://{BUCKET}.s3.amazonaws.com/{s3_key}"
+    # Support both direct invocation and S3 trigger
+    if "Records" in event:
+        records = [{"s3_key": r["s3"]["object"]["key"]} for r in event["Records"]]
+    else:
+        records = [event]
 
-        file_type = "video" if ext in VIDEO_EXTS else "image"
+    for record in records:
+        s3_key   = record.get("file_key") or record.get("s3_key", "")
+        file_url = record.get("file_url") or f"https://{BUCKET}.s3.amazonaws.com/{s3_key}"
+        ext      = os.path.splitext(s3_key)[1].lower()
+        file_id  = record.get("file_id") or _s3_key_to_file_id(s3_key)
+        file_type = record.get("file_type") or ("video" if ext in VIDEO_EXTS else "image")
 
         print(f"[tagger] Processing {s3_key} ({file_type})")
 

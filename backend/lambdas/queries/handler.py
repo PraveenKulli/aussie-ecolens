@@ -32,6 +32,24 @@ def _response(status, body):
     }
 
 
+def presign(key: str, expires: int = 3600) -> str:
+    """Generate a presigned URL for an S3 key."""
+    try:
+        if not key:
+            return ""
+        # Extract key from full URL if needed
+        if key.startswith("https://"):
+            key = "/".join(key.split("/")[3:])
+        return s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": BUCKET, "Key": key},
+            ExpiresIn=expires,
+        )
+    except Exception as e:
+        print(f"[queries] presign error: {e}")
+        return key
+
+
 def scan_all_files() -> list:
     """Scan all DynamoDB items (pagination-aware)."""
     items = []
@@ -82,9 +100,11 @@ def handle_query_tags(body: dict) -> dict:
         )
 
         if match:
+            raw_thumb = item.get("thumbnail_url", "")
+            raw_file  = item.get("file_url", "")
             results.append({
-                "file_url":      item.get("file_url", ""),
-                "thumbnail_url": item.get("thumbnail_url", ""),
+                "file_url":      presign(raw_file),
+                "thumbnail_url": presign(raw_thumb),
                 "frame_urls":    item.get("frame_urls", []),
                 "file_type":     item.get("file_type", "image"),
                 "tags":          item_tags,
@@ -103,9 +123,12 @@ def handle_query_thumbnail(body: dict) -> dict:
     if not thumb_url:
         return _response(400, {"error": "thumbnail_url is required"})
 
+    # Strip presigned URL params — DynamoDB stores plain URLs
+    plain_thumb = thumb_url.split("?")[0]
+
     results = table.query(
         IndexName="thumbnail-index",
-        KeyConditionExpression=Key("thumbnail_url").eq(thumb_url),
+        KeyConditionExpression=Key("thumbnail_url").eq(plain_thumb),
     )
     items = results.get("Items", [])
     if not items:
@@ -113,8 +136,8 @@ def handle_query_thumbnail(body: dict) -> dict:
 
     item = items[0]
     return _response(200, {
-        "file_url":      item.get("file_url", ""),
-        "thumbnail_url": thumb_url,
+        "file_url":      presign(item.get("file_url", "")),
+        "thumbnail_url": presign(thumb_url),
         "tags":          item.get("tags", []),
         "file_id":       item.get("file_id", ""),
     })
@@ -169,7 +192,11 @@ def handle_query_file(event: dict) -> dict:
             Body=file_bytes,
             ContentType=content_type,
         )
-        tmp_url = f"https://{BUCKET}.s3.amazonaws.com/{tmp_key}"
+        tmp_url = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": BUCKET, "Key": tmp_key},
+            ExpiresIn=300,
+        )
 
         file_type = "video" if ext in {".mp4", ".mov", ".avi", ".mkv"} else "image"
         detected_tags = call_gcp_for_tags(tmp_url, file_type)
@@ -190,8 +217,8 @@ def handle_query_file(event: dict) -> dict:
             item_tags = set(item.get("tags", []))
             if all(t in item_tags for t in detected_tags):
                 results.append({
-                    "file_url":      item.get("file_url", ""),
-                    "thumbnail_url": item.get("thumbnail_url", ""),
+                    "file_url":      presign(item.get("file_url", "")),
+                    "thumbnail_url": presign(item.get("thumbnail_url", "")),
                     "file_type":     item.get("file_type", "image"),
                     "tags":          list(item_tags),
                 })
