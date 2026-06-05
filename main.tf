@@ -656,8 +656,7 @@ resource "aws_lambda_function" "notifications" {
 resource "aws_lambda_layer_version" "cv2_layer" {
   layer_name          = "aussie-ecolens-cv2"
   compatible_runtimes = ["python3.12"]
-  s3_bucket           = "aussie-ecolens-media-1330499f"
-  s3_key              = "cv2_layer.zip"
+  filename            = "${path.module}/zips/cv2_layer.zip"
 }
 
 # ─────────────────────────────────────────────
@@ -999,9 +998,6 @@ resource "google_storage_bucket" "ml_models" {
   location      = var.gcp_region
   force_destroy = true
   uniform_bucket_level_access = true
-  lifecycle {
-    ignore_changes = all
-  }
 }
 
 resource "google_storage_bucket_iam_member" "model_public_read" {
