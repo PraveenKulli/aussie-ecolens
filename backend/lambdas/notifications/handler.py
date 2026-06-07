@@ -34,27 +34,25 @@ def handle_subscribe(body: dict) -> dict:
     if not tags:
         return _response(400, {"error": "tags list is required"})
 
-    # Subscribe with a filter policy so only notifications for the requested tags are sent
     filter_policy = json.dumps({"tags": tags})
 
-    resp = sns.subscribe(
-        TopicArn=SNS_ARN,
-        Protocol="email",
-        Endpoint=email,
-        Attributes={
-            "FilterPolicy": filter_policy,
-        },
-        ReturnSubscriptionArn=True,
-    )
-
-    subscription_arn = resp.get("SubscriptionArn", "")
-
-    return _response(200, {
-        "message":          f"Subscription pending email confirmation for {email}",
-        "subscription_arn": subscription_arn,
-        "watched_tags":     tags,
-        "note":             "Check your email and click the confirmation link to activate notifications",
-    })
+    try:
+        resp = sns.subscribe(
+            TopicArn=SNS_ARN,
+            Protocol="email",
+            Endpoint=email,
+            Attributes={"FilterPolicy": filter_policy},
+            ReturnSubscriptionArn=True,
+        )
+        subscription_arn = resp.get("SubscriptionArn", "")
+        return _response(200, {
+            "message":          f"Subscription pending email confirmation for {email}",
+            "subscription_arn": subscription_arn,
+            "watched_tags":     tags,
+            "note":             "Check your email and click the confirmation link to activate notifications",
+        })
+    except Exception as e:
+        return _response(500, {"error": str(e)})
 
 
 def handle_unsubscribe(body: dict) -> dict:
@@ -65,7 +63,7 @@ def handle_unsubscribe(body: dict) -> dict:
     try:
         sns.unsubscribe(SubscriptionArn=sub_arn)
         return _response(200, {"message": "Unsubscribed successfully"})
-    except sns.exceptions.InvalidParameterException as e:
+    except Exception as e:
         return _response(400, {"error": str(e)})
 
 
