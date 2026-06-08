@@ -20,7 +20,7 @@ No installation required — the application is fully deployed on AWS CloudFront
 |------|-----------|--------------|---|
 | Anil Kumar Ramesh | 35090642 | Cognito, S3, DynamoDB, IAM, Architecture diagram | 20% |
 | Hemanth Naik Krishna Naik | 35093846 | GCP Cloud Function, MegaDetector, SpeciesNet, OpenCV thumbnails, DynamoDB | 20% |
-| Sukanya Gaikwad | [Student ID] | Lambda (queries, tags, delete, notifications), API Gateway, SNS | 20% |
+| Sukanya Gaikwad | 35223478 | Lambda (queries, tags, delete, notifications), API Gateway, SNS | 20% |
 | Praveen Kulli | 35532009 | Full-stack: Terraform IaC, all 7 Lambda functions, GCP Cloud Function, React frontend, CloudFront deployment, reports | 40% |
 
 
