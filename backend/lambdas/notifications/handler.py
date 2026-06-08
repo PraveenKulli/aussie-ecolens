@@ -28,6 +28,8 @@ def _response(status, body):
 def handle_subscribe(body: dict) -> dict:
     email = body.get("email", "").strip()
     tags  = body.get("tags", [])
+    if isinstance(tags, str):
+        tags = [tags]
 
     if not email:
         return _response(400, {"error": "email is required"})
@@ -49,6 +51,19 @@ def handle_subscribe(body: dict) -> dict:
 
     subscription_arn = resp.get("SubscriptionArn", "")
 
+    try:
+        table.put_item(
+            Item={
+                "file_id": f"subscription#{email}",
+                "email": email,
+                "subscription_arn": subscription_arn,
+                "watched_tags": tags,
+                "record_type": "subscription"
+            }
+        )
+    except Exception as e:
+        print(f"[notifications] Failed to save subscription: {e}")
+    
     return _response(200, {
         "message":          f"Subscription pending email confirmation for {email}",
         "subscription_arn": subscription_arn,
