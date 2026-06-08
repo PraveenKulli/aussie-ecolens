@@ -1,0 +1,37 @@
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "LambdaFunctionArn": "arn:aws:lambda:us-east-1:596249957185:function:aussie-ecolens-thumbnail",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": {
+        "Key": {
+          "FilterRules": [
+            {"Name": "prefix", "Value": "originals/images/"}
+          ]
+        }
+      }
+    },
+    {
+      "LambdaFunctionArn": "arn:aws:lambda:us-east-1:596249957185:function:aussie-ecolens-ml-detection",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": {
+        "Key": {
+          "FilterRules": [
+            {"Name": "prefix", "Value": "originals/ml/"}
+          ]
+        }
+      }
+    },
+    {
+      "LambdaFunctionArn": "arn:aws:lambda:us-east-1:596249957185:function:aussie-ecolens-video",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": {
+        "Key": {
+          "FilterRules": [
+            {"Name": "prefix", "Value": "originals/videos/"}
+          ]
+        }
+      }
+    }
+  ]
+}

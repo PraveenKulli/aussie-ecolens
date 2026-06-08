@@ -1,0 +1,11 @@
+ecolens_env/
+*.pt
+*.onnx
+*.zip
+__pycache__/
+*.pyc
+response.json
+payload.json
+AWSCLIV2.msi
+python/
+convert_to_onnx.py
