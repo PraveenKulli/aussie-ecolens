@@ -235,5 +235,5 @@ See `labels.txt` for the full list.
 
 - MegaDetector by Microsoft AI for Earth
 - SpeciesNet fine-tuned model provided by the FIT5225 teaching team
-- AWS Academy for cloud credits
+- AWS for cloud credits
 - GCP Free Tier for ML inference compute
